@@ -1,3 +1,0 @@
-[submodule "libcxx"]
-	path = libcxx
-	url = https://git.llvm.org/git/libcxx
