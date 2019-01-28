@@ -33,7 +33,7 @@ You may, however, enjoy creating your own demo application.
 
 Assuming you compile with `-I<path-to-includes/>`:
 1. Each header named `<simt/X>` conforms to the specification for the header `<X>` from ISO C++, except that each occurrence of `std::` is prefixed with `simt::`.
-2. Except for limitations specified below, each facility thus introduced in `simt::` works in both `__host__` and `__device__` functions, under `-std=c++11` and `-std=c++14`, on Windows, Mac and Linux with CUDA 9 or 10 on Volta, Xavier and Turing. (_Though, obviously, not all combinations are possible._)
+2. Except for limitations specified below, each facility thus introduced in `simt::` works in both `__host__` and `__device__` functions, under `-std=c++11` and `-std=c++14`, on Windows and Linux with CUDA 9 or 10 on Volta, Xavier and Turing. (_Though, obviously, not all combinations are possible._)
 
 ## What does not work
 
@@ -43,11 +43,11 @@ In specific, see the table below.
 
 | Header | Limitation in function | Requires | 
 | ----------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| `<simt/atomic>`           | Except `simt::std::atomic<T>`, where `is_lock_free()` returns `false`, in `__device__` functions, temporarily. | `<simt/cstddef>`, `<simt/cstdint>`, `<simt/type_traits>`           |
+| `<simt/atomic>`           | Except fence functions also add the suffix `_simt`. | `<simt/cstddef>`, `<simt/cstdint>`, `<simt/type_traits>`           |
 | `<simt/cfloat>`           |                                                              | `<float.h>`                                                    |
 | `<simt/ciso646>`          |                                                              | `<iso646.h>`                                                   |
 | `<simt/climits>`          |                                                              | `<limits.h>`                                                   |
-| `<simt/cstdalign>`        | Except Mac OS X.                                                    | `<stdalign.h>`                                                 |
+| `<simt/cstdalign>`        |                                                     | `<stdalign.h>`                                                 |
 | `<simt/cstdarg>`          | Except `__device__` functions.                                            | `<stdarg.h>`                                                   |
 | `<simt/cstdbool>`         |                                                              |                                                              |
 | `<simt/cstddef>`          |                                                              | `<stddef.h>`                                                   |
