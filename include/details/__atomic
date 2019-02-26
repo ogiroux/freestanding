@@ -157,7 +157,7 @@ __host__ __device__ inline _Tp __cxx_atomic_exchange(__cxx_atomic_base_impl<_Tp,
 #endif
 }
 template<class _Tp, int _Sco> 
-__host__ __device__ inline bool __cxx_atomic_compare_exchange_strong(__cxx_atomic_base_impl<_Tp, _Sco> volatile* __a, _Tp __expected, _Tp __value, int __success, int __failure) {
+__host__ __device__ inline bool __cxx_atomic_compare_exchange_strong(__cxx_atomic_base_impl<_Tp, _Sco> volatile* __a, _Tp* __expected, _Tp __value, int __success, int __failure) {
 #ifdef __CUDA_ARCH__
     return details::__atomic_compare_exchange_n_simt(&__a->__a_value, __expected, __value, false, __success, __failure, details::__scope_tag<_Sco>()); 
 #else
@@ -165,7 +165,7 @@ __host__ __device__ inline bool __cxx_atomic_compare_exchange_strong(__cxx_atomi
 #endif
 }
 template<class _Tp, int _Sco> 
-__host__ __device__ inline bool __cxx_atomic_compare_exchange_weak(__cxx_atomic_base_impl<_Tp, _Sco> volatile* __a, _Tp __expected, _Tp __value, int __success, int __failure) {
+__host__ __device__ inline bool __cxx_atomic_compare_exchange_weak(__cxx_atomic_base_impl<_Tp, _Sco> volatile* __a, _Tp* __expected, _Tp __value, int __success, int __failure) {
 #ifdef __CUDA_ARCH__
     return details::__atomic_compare_exchange_n_simt(&__a->__a_value, __expected, __value, true, __success, __failure, details::__scope_tag<_Sco>()); 
 #else
