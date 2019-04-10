@@ -49,10 +49,26 @@ THE SOFTWARE.
 #define _LIBCPP_NO_RTTI
 #define _LIBCPP_HAS_NO_INT128
 #define _LIBCPP_FREESTANDING
+#ifdef __CUDACC_RTC__
+    #define __ELF__
+    #define _LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER
+    #define _LIBCPP_HAS_THREAD_API_EXTERNAL
+    #define __alignof(x) alignof(x)
+#endif
+#define _LIBCPP_HAS_EXTERNAL_ATOMIC_IMP
 
-#include "../libcxx/include/__config"
+#include "../../libcxx/include/__config"
+
+#ifdef __CUDACC_RTC__
+#  undef _ALIGNAS_TYPE
+#  undef _ALIGNAS
+#  define _ALIGNAS_TYPE(x) alignas(x)
+#  define _ALIGNAS(x) alignas(x)
+#endif
 
 // force this outcome
+#undef _LIBCPP_ATOMIC_FLAG_TYPE
+#define _LIBCPP_ATOMIC_FLAG_TYPE int
 #undef _LIBCPP_INLINE_VISIBILITY
 #define _LIBCPP_INLINE_VISIBILITY __host__ __device__
 

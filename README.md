@@ -31,9 +31,35 @@ You may, however, enjoy creating your own demo application.
 
 ## What happens to work
 
+Toolchains based on CUDA 9.0 and above:
+1. NVCC with GCC or Clang, and the libstdc++ host library.
+2. NVCC with VC++, and the VC++ host library.
+3. Clang, with the libstdc++ host library.
+4. NVRTC, with access to the C host library.
+
 Assuming you compile with `-I<path-to-include/>`:
 1. Each header named `<simt/X>` conforms to the specification for the header `<X>` from ISO C++, except that each occurrence of `std::` is prefixed with `simt::`.
 2. Except for limitations specified below, each facility thus introduced in `simt::` works in both `__host__` and `__device__` functions, under `-std=c++11` and `-std=c++14`, on Windows and Linux with CUDA 9 or 10 on Volta, Xavier and Turing. (_Though, obviously, not all combinations are possible._)
+
+## Considerations for use under NVRTC
+
+If you choose to use this facility with the [run-time compiler](https://docs.nvidia.com/cuda/nvrtc/index.html) then you will need to ensure it can find the necessary headers. The simplest way to achieve that is to point to headers on your filesystem.
+
+For example, hypothetically speaking, these might be the paths you need to provide:
+
+```c++
+  const char *opts[] = {"-std=c++11",
+                        "-I/usr/include/linux",
+                        "-I/usr/include/c++/7.3.0",
+                        "-I/usr/local/cuda/include",
+                        "-I/home/olivier/freestanding/include",
+                        "--gpu-architecture=compute_70",
+                        "--relocatable-device-code=true",
+                        "-default-device"};
+  nvrtcResult compileResult = nvrtcCompileProgram(prog,  // prog
+                                                  8,     // numOptions
+                                                  opts); // options
+```
 
 ## What does not work
 
