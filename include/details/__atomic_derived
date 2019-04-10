@@ -127,17 +127,6 @@ type __device__ __atomic_exchange_n_simt(type volatile *ptr, type val, int memor
     return ret;
 }
 
-/*
-template<class type, class scope>
-inline bool __device__ __atomic_test_and_set_simt(type volatile *ptr, int memorder, scope s) {
-    return __atomic_exchange_n_simt((char*)ptr, (char)1, memorder, s) == 1;
-}
-template<class type, class scope>
-inline void __device__ __atomic_clear_simt(type volatile *ptr, int memorder, scope s) {
-    return __atomic_store_n_simt((char*)ptr, (char)0, memorder, s);
-}
-*/
-
 static inline __device__ void __atomic_signal_fence_simt(int) {
     asm volatile("":::"memory");
 }
