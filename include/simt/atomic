@@ -112,6 +112,15 @@ struct atomic
     __host__ __device__
     _Tp operator=(_Tp __d) noexcept
         {__base::store(__d); return __d;}
+
+    __device__
+    _Tp fetch_max(const _Tp & __op, memory_order __m = memory_order_seq_cst) volatile noexcept
+    { return details::__atomic_fetch_max_simt(&this->__a, __op, __m); }
+
+    __device__
+    _Tp fetch_min(const _Tp & __op, memory_order __m = memory_order_seq_cst) volatile noexcept
+    { return details::__atomic_fetch_min_simt(&this->__a, __op, __m); }
+
 };
 
 // atomic<T*>
