@@ -1451,40 +1451,4 @@ __device__ type* __atomic_fetch_sub_simt(type *volatile *ptr, ptrdiff_t val, int
     memcpy(&ret, &tmp, 8);
     return ret;
 }
-template<class type>
-__device__ type* __atomic_fetch_max_simt(type *volatile *ptr, ptrdiff_t val, int memorder, __thread_scope_system_tag) {
-    type* ret;
-    uint64_t tmp = 0;
-    memcpy(&tmp, &val, 8);
-    tmp *= sizeof(type);
-    switch (memorder) {
-    case __ATOMIC_SEQ_CST: __simt_fence_sc_system();
-    case __ATOMIC_CONSUME:
-    case __ATOMIC_ACQUIRE: __simt_max_acquire_64_system(ptr, tmp, tmp); break;
-    case __ATOMIC_ACQ_REL: __simt_max_acq_rel_64_system(ptr, tmp, tmp); break;
-    case __ATOMIC_RELEASE: __simt_max_release_64_system(ptr, tmp, tmp); break;
-    case __ATOMIC_RELAXED: __simt_max_relaxed_64_system(ptr, tmp, tmp); break;
-    default: assert(0);
-    }
-    memcpy(&ret, &tmp, 8);
-    return ret;
-}
-template<class type>
-__device__ type* __atomic_fetch_min_simt(type *volatile *ptr, ptrdiff_t val, int memorder, __thread_scope_system_tag) {
-    type* ret;
-    uint64_t tmp = 0;
-    memcpy(&tmp, &val, 8);
-    tmp *= sizeof(type);
-    switch (memorder) {
-    case __ATOMIC_SEQ_CST: __simt_fence_sc_system();
-    case __ATOMIC_CONSUME:
-    case __ATOMIC_ACQUIRE: __simt_min_acquire_64_system(ptr, tmp, tmp); break;
-    case __ATOMIC_ACQ_REL: __simt_min_acq_rel_64_system(ptr, tmp, tmp); break;
-    case __ATOMIC_RELEASE: __simt_min_release_64_system(ptr, tmp, tmp); break;
-    case __ATOMIC_RELAXED: __simt_min_relaxed_64_system(ptr, tmp, tmp); break;
-    default: assert(0);
-    }
-    memcpy(&ret, &tmp, 8);
-    return ret;
-}
 } } }

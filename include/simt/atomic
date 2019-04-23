@@ -115,12 +115,17 @@ struct atomic
 
     __device__
     _Tp fetch_max(const _Tp & __op, memory_order __m = memory_order_seq_cst) volatile noexcept
-    { return details::__atomic_fetch_max_simt(&this->__a, __op, __m); }
+    {
+        return details::__atomic_fetch_max_simt(&this->__a_.__a_value, __op,
+                                              __m, details::__scope_tag<_Sco>());
+    }
 
     __device__
     _Tp fetch_min(const _Tp & __op, memory_order __m = memory_order_seq_cst) volatile noexcept
-    { return details::__atomic_fetch_min_simt(&this->__a, __op, __m); }
-
+    {
+        return details::__atomic_fetch_min_simt(&this->__a_.__a_value, __op,
+                                              __m, details::__scope_tag<_Sco>());
+    }
 };
 
 // atomic<T*>
