@@ -60,6 +60,8 @@ int main() {
                                                        { "compare_exchange", "cas" },
                                                        { "fetch_add", "add" },
                                                        { "fetch_sub", "add" },
+                                                       { "fetch_max", "max" },
+                                                       { "fetch_min", "min" },
                                                        { "fetch_and", "and" },
                                                        { "fetch_or", "or" },
                                                        { "fetch_xor", "xor" } };
@@ -181,7 +183,7 @@ THE SOFTWARE.
                         else
                             out << "_A _ptr, _B& _dst, _C _op";
                         out << ") { ";
-                        if(rmw.first == "fetch_add" || rmw.first == "fetch_sub")
+                        if(rmw.first == "fetch_add" || rmw.first == "fetch_sub" || rmw.first == "fetch_max" || rmw.first == "fetch_min")
                             out << "asm volatile(\"atom." << rmw.second << "." << sem << "." << s.second << ".u" << sz << " ";
                         else
                             out << "asm volatile(\"atom." << rmw.second << "." << sem << "." << s.second << ".b" << sz << " ";

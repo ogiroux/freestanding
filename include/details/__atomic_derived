@@ -64,25 +64,33 @@ type __device__ __atomic_fetch_add_simt(type volatile *ptr, delta val, int memor
 }
 
 template<class type, class delta, class scope, typename std::enable_if<sizeof(type)<=2, int>::type = 0>
-type __device__ __atomic_fetch_max_simt(type volatile *ptr, delta val, int memorder, scope s) {
+type __host__ __device__ __atomic_fetch_max_simt(type volatile *ptr, delta val, int memorder, scope s) {
 
     type expected = __atomic_load_n_simt(ptr, __ATOMIC_RELAXED, s);
     type const desired = expected > val ? expected : val;
     if(desired == val) {
+#ifdef __CUDA_ARCH__
         while(!__atomic_compare_exchange_simt(ptr, &expected, &desired, true, memorder, memorder, s))
             ;
+#else
+        while(!::std::atomic_compare_exchange_strong_explicit(ptr, &expected, desired, memorder, memorder));
+#endif
     }
     return expected;
 }
 
 template<class type, class delta, class scope, typename std::enable_if<sizeof(type)<=2, int>::type = 0>
-type __device__ __atomic_fetch_min_simt(type volatile *ptr, delta val, int memorder, scope s) {
+type __host__ __device__ __atomic_fetch_min_simt(type volatile *ptr, delta val, int memorder, scope s) {
 
     type expected = __atomic_load_n_simt(ptr, __ATOMIC_RELAXED, s);
     type const desired = expected < val ? expected : val;
     if(desired == val) {
+#ifdef __CUDA_ARCH__
         while(!__atomic_compare_exchange_simt(ptr, &expected, &desired, true, memorder, memorder, s))
             ;
+#else
+        while(!::std::atomic_compare_exchange_strong_explicit(ptr, &expected, desired, memorder, memorder));
+#endif
     }
     return expected;
 }
