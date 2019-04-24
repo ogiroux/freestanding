@@ -68,13 +68,14 @@ type __host__ __device__ __atomic_fetch_max_simt(type volatile *ptr, delta val, 
 
     type expected = __atomic_load_n_simt(ptr, __ATOMIC_RELAXED, s);
     type const desired = expected > val ? expected : val;
-    if(desired == val) {
 #ifdef __CUDA_ARCH__
-        while(!__atomic_compare_exchange_simt(ptr, &expected, &desired, true, memorder, memorder, s))
-            ;
+    while(desired == val &&
+          !__atomic_compare_exchange_simt(ptr, &expected, &desired, true, memorder, memorder, s)) {
 #else
-        while(!::std::atomic_compare_exchange_strong_explicit(ptr, &expected, desired, memorder, memorder));
+    while(desired == val &&
+          !::std::atomic_compare_exchange_strong_explicit(ptr, &expected, desired, memorder, memorder)) {
 #endif
+        desired = expected > val ? expected : val;
     }
     return expected;
 }
@@ -84,13 +85,14 @@ type __host__ __device__ __atomic_fetch_min_simt(type volatile *ptr, delta val, 
 
     type expected = __atomic_load_n_simt(ptr, __ATOMIC_RELAXED, s);
     type const desired = expected < val ? expected : val;
-    if(desired == val) {
 #ifdef __CUDA_ARCH__
-        while(!__atomic_compare_exchange_simt(ptr, &expected, &desired, true, memorder, memorder, s))
-            ;
+    while(desired != val &&
+          !__atomic_compare_exchange_simt(ptr, &expected, &desired, true, memorder, memorder, s)) {
 #else
-        while(!::std::atomic_compare_exchange_strong_explicit(ptr, &expected, desired, memorder, memorder));
+    while(desired != val &&
+          !::std::atomic_compare_exchange_strong_explicit(ptr, &expected, desired, memorder, memorder)) {
 #endif
+        desired = expected < val ? expected : val;
     }
     return expected;
 }
