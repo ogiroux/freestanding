@@ -204,33 +204,34 @@ THE SOFTWARE.
         }
         for(auto& sz : rmw_sizes) {
             for(auto& rmw: rmw_operations) {
-                if(rmw.first != "fetch_sub")
-                    for(auto& sem : rmw_semantics) {
-                        if(rmw.first == "compare_exchange")
-                            out << "template<class _A, class _B, class _C, class _D> ";
-                        else
-                            out << "template<class _A, class _B, class _C> ";
-                        out << "static inline __device__ void __simt_" << rmw.first << "_" << sem.first << "_" << sz << "_" << s.first << "(";
-                        if(rmw.first == "compare_exchange")
-                            out << "_A _ptr, _B& _dst, _C _cmp, _D _op";
-                        else
-                            out << "_A _ptr, _B& _dst, _C _op";
-                        out << ") { ";
-                        if(rmw.first == "fetch_add" || rmw.first == "fetch_sub" || rmw.first == "fetch_max" || rmw.first == "fetch_min")
-                            out << "asm volatile(\"atom" << rmw.second << sem.second << s.second << ".u" << sz << " ";
-                        else
-                            out << "asm volatile(\"atom" << rmw.second << sem.second << s.second << ".b" << sz << " ";
-                        if(rmw.first == "compare_exchange")
-                            out << "%0,[%1],%2,%3";
-                        else
-                            out << "%0,[%1],%2";
-                        out << ";\" : ";
-                        if(rmw.first == "compare_exchange")
-                            out << "\"=" << registers[sz] << "\"(_dst) : \"l\"(_ptr),\"" << registers[sz] << "\"(_cmp),\"" << registers[sz] << "\"(_op)";
-                        else
-                            out << "\"=" << registers[sz] << "\"(_dst) : \"l\"(_ptr),\"" << registers[sz] << "\"(_op)";
-                        out << " : \"memory\"); }\n";
-                    }
+                for(auto& sem : rmw_semantics) {
+                    if(rmw.first == "compare_exchange")
+                        out << "template<class _A, class _B, class _C, class _D> ";
+                    else
+                        out << "template<class _A, class _B, class _C> ";
+                    out << "static inline __device__ void __simt_" << rmw.first << "_" << sem.first << "_" << sz << "_" << s.first << "(";
+                    if(rmw.first == "compare_exchange")
+                        out << "_A _ptr, _B& _dst, _C _cmp, _D _op";
+                    else
+                        out << "_A _ptr, _B& _dst, _C _op";
+                    out << ") { ";
+                    if(rmw.first == "fetch_sub") 
+                        out << "_op = -_op;" << std::endl;
+                    if(rmw.first == "fetch_add" || rmw.first == "fetch_sub" || rmw.first == "fetch_max" || rmw.first == "fetch_min")
+                        out << "asm volatile(\"atom" << rmw.second << sem.second << s.second << ".u" << sz << " ";
+                    else
+                        out << "asm volatile(\"atom" << rmw.second << sem.second << s.second << ".b" << sz << " ";
+                    if(rmw.first == "compare_exchange")
+                        out << "%0,[%1],%2,%3";
+                    else
+                        out << "%0,[%1],%2";
+                    out << ";\" : ";
+                    if(rmw.first == "compare_exchange")
+                        out << "\"=" << registers[sz] << "\"(_dst) : \"l\"(_ptr),\"" << registers[sz] << "\"(_cmp),\"" << registers[sz] << "\"(_op)";
+                    else
+                        out << "\"=" << registers[sz] << "\"(_dst) : \"l\"(_ptr),\"" << registers[sz] << "\"(_op)";
+                    out << " : \"memory\"); }\n";
+                }
                 for(auto& cv: cv_qualifier) {
                     if(rmw.first == "compare_exchange") {
                         out << "template<class type, typename simt::std::enable_if<sizeof(type)==" << sz/8 << ", int>::type = 0>\n";
@@ -275,8 +276,6 @@ THE SOFTWARE.
                             out << "    uint" << sz << "_t tmp = 0;\n";
                             out << "    memcpy(&tmp, &val, " << sz/8 << ");\n";
                         }
-                        if(rmw.first == "fetch_sub")
-                            out << "    tmp = -tmp;\n";
                         out << "    switch (memorder) {\n";
                         out << "#if __CUDA_ARCH__ >= 700\n";
                         out << "    case __ATOMIC_SEQ_CST: " << fencename("sc"s, s.first) << "();\n";
