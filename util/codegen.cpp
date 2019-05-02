@@ -253,7 +253,7 @@ THE SOFTWARE.
                         out << "    case __ATOMIC_ACQ_REL: __simt_membar_" << s.first << "();\n";
                         out << "    case __ATOMIC_CONSUME:\n";
                         out << "    case __ATOMIC_ACQUIRE: __simt_compare_exchange_volatile_" << sz << "_" << s.first << "(ptr, old, old_tmp, tmp); __simt_membar_" << s.first << "(); break;\n";
-                        out << "    case __ATOMIC_RELEASE: __simt_membar_" << s.first << "(); __simt_cas_volatile_" << sz << "_" << s.first << "(ptr, old, old_tmp, tmp); break;\n";
+                        out << "    case __ATOMIC_RELEASE: __simt_membar_" << s.first << "(); __simt_compare_exchange_volatile_" << sz << "_" << s.first << "(ptr, old, old_tmp, tmp); break;\n";
                         out << "    case __ATOMIC_RELAXED: __simt_compare_exchange_volatile_" << sz << "_" << s.first << "(ptr, old, old_tmp, tmp); break;\n";
                         out << "#endif // __CUDA_ARCH__ >= 700\n";
                         out << "    default: assert(0);\n";

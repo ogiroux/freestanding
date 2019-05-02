@@ -153,7 +153,7 @@ __device__ bool __atomic_compare_exchange_simt(volatile type *ptr, type *expecte
     case __ATOMIC_ACQ_REL: __simt_membar_block();
     case __ATOMIC_CONSUME:
     case __ATOMIC_ACQUIRE: __simt_compare_exchange_volatile_32_block(ptr, old, old_tmp, tmp); __simt_membar_block(); break;
-    case __ATOMIC_RELEASE: __simt_membar_block(); __simt_cas_volatile_32_block(ptr, old, old_tmp, tmp); break;
+    case __ATOMIC_RELEASE: __simt_membar_block(); __simt_compare_exchange_volatile_32_block(ptr, old, old_tmp, tmp); break;
     case __ATOMIC_RELAXED: __simt_compare_exchange_volatile_32_block(ptr, old, old_tmp, tmp); break;
 #endif // __CUDA_ARCH__ >= 700
     default: assert(0);
@@ -437,7 +437,7 @@ __device__ bool __atomic_compare_exchange_simt(volatile type *ptr, type *expecte
     case __ATOMIC_ACQ_REL: __simt_membar_block();
     case __ATOMIC_CONSUME:
     case __ATOMIC_ACQUIRE: __simt_compare_exchange_volatile_64_block(ptr, old, old_tmp, tmp); __simt_membar_block(); break;
-    case __ATOMIC_RELEASE: __simt_membar_block(); __simt_cas_volatile_64_block(ptr, old, old_tmp, tmp); break;
+    case __ATOMIC_RELEASE: __simt_membar_block(); __simt_compare_exchange_volatile_64_block(ptr, old, old_tmp, tmp); break;
     case __ATOMIC_RELAXED: __simt_compare_exchange_volatile_64_block(ptr, old, old_tmp, tmp); break;
 #endif // __CUDA_ARCH__ >= 700
     default: assert(0);
@@ -882,7 +882,7 @@ __device__ bool __atomic_compare_exchange_simt(volatile type *ptr, type *expecte
     case __ATOMIC_ACQ_REL: __simt_membar_device();
     case __ATOMIC_CONSUME:
     case __ATOMIC_ACQUIRE: __simt_compare_exchange_volatile_32_device(ptr, old, old_tmp, tmp); __simt_membar_device(); break;
-    case __ATOMIC_RELEASE: __simt_membar_device(); __simt_cas_volatile_32_device(ptr, old, old_tmp, tmp); break;
+    case __ATOMIC_RELEASE: __simt_membar_device(); __simt_compare_exchange_volatile_32_device(ptr, old, old_tmp, tmp); break;
     case __ATOMIC_RELAXED: __simt_compare_exchange_volatile_32_device(ptr, old, old_tmp, tmp); break;
 #endif // __CUDA_ARCH__ >= 700
     default: assert(0);
@@ -1166,7 +1166,7 @@ __device__ bool __atomic_compare_exchange_simt(volatile type *ptr, type *expecte
     case __ATOMIC_ACQ_REL: __simt_membar_device();
     case __ATOMIC_CONSUME:
     case __ATOMIC_ACQUIRE: __simt_compare_exchange_volatile_64_device(ptr, old, old_tmp, tmp); __simt_membar_device(); break;
-    case __ATOMIC_RELEASE: __simt_membar_device(); __simt_cas_volatile_64_device(ptr, old, old_tmp, tmp); break;
+    case __ATOMIC_RELEASE: __simt_membar_device(); __simt_compare_exchange_volatile_64_device(ptr, old, old_tmp, tmp); break;
     case __ATOMIC_RELAXED: __simt_compare_exchange_volatile_64_device(ptr, old, old_tmp, tmp); break;
 #endif // __CUDA_ARCH__ >= 700
     default: assert(0);
@@ -1611,7 +1611,7 @@ __device__ bool __atomic_compare_exchange_simt(volatile type *ptr, type *expecte
     case __ATOMIC_ACQ_REL: __simt_membar_system();
     case __ATOMIC_CONSUME:
     case __ATOMIC_ACQUIRE: __simt_compare_exchange_volatile_32_system(ptr, old, old_tmp, tmp); __simt_membar_system(); break;
-    case __ATOMIC_RELEASE: __simt_membar_system(); __simt_cas_volatile_32_system(ptr, old, old_tmp, tmp); break;
+    case __ATOMIC_RELEASE: __simt_membar_system(); __simt_compare_exchange_volatile_32_system(ptr, old, old_tmp, tmp); break;
     case __ATOMIC_RELAXED: __simt_compare_exchange_volatile_32_system(ptr, old, old_tmp, tmp); break;
 #endif // __CUDA_ARCH__ >= 700
     default: assert(0);
@@ -1895,7 +1895,7 @@ __device__ bool __atomic_compare_exchange_simt(volatile type *ptr, type *expecte
     case __ATOMIC_ACQ_REL: __simt_membar_system();
     case __ATOMIC_CONSUME:
     case __ATOMIC_ACQUIRE: __simt_compare_exchange_volatile_64_system(ptr, old, old_tmp, tmp); __simt_membar_system(); break;
-    case __ATOMIC_RELEASE: __simt_membar_system(); __simt_cas_volatile_64_system(ptr, old, old_tmp, tmp); break;
+    case __ATOMIC_RELEASE: __simt_membar_system(); __simt_compare_exchange_volatile_64_system(ptr, old, old_tmp, tmp); break;
     case __ATOMIC_RELAXED: __simt_compare_exchange_volatile_64_system(ptr, old, old_tmp, tmp); break;
 #endif // __CUDA_ARCH__ >= 700
     default: assert(0);
