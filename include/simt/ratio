@@ -1,3 +1,4 @@
+
 /*
 
 Copyright (c) 2018, NVIDIA Corporation
@@ -22,13 +23,17 @@ THE SOFTWARE.
 
 */
 
-#ifndef _SIMT___DEBUG
-#define _SIMT___DEBUG
+#ifndef _SIMT_RATIO
+#define _SIMT_RATIO
 
-#include <string>
+#include "cstdint"
+#include "climits"
+#include "type_traits"
 
-#include "__config"
+#include "../details/__config"
 
-#include "../../libcxx/include/__debug"
+#include "../../libcxx/include/ratio"
 
-#endif //_SIMT___DEBUG
+#endif //_SIMT_RATIO
+
+

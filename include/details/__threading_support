@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2018, NVIDIA Corporation
+Copyright (c) 2019, NVIDIA Corporation
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,13 +22,18 @@ THE SOFTWARE.
 
 */
 
-#ifndef _SIMT___DEBUG
-#define _SIMT___DEBUG
+#ifndef _SIMT___THREADING_SUPPORT
+#define _SIMT___THREADING_SUPPORT
 
-#include <string>
+#include <errno.h>
+
+#include "../simt/chrono"
+#include "iosfwd"
+//#include <../simt/errno.h>
 
 #include "__config"
 
-#include "../../libcxx/include/__debug"
+#include "../../libcxx/include/__threading_support"
 
-#endif //_SIMT___DEBUG
+#endif //_SIMT___THREADING_SUPPORT
+

@@ -1,6 +1,7 @@
+
 /*
 
-Copyright (c) 2018, NVIDIA Corporation
+Copyright (c) 2019, NVIDIA Corporation
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,13 +23,19 @@ THE SOFTWARE.
 
 */
 
-#ifndef _SIMT___DEBUG
-#define _SIMT___DEBUG
+#ifndef _SIMT_CHRONO
+#define _SIMT_CHRONO
 
-#include <string>
+#include "ctime"
+#include "type_traits"
+#include "ratio"
+#include "limits"
+#include "version"
 
-#include "__config"
+#include "../details/__config"
 
-#include "../../libcxx/include/__debug"
+#include "../../libcxx/include/chrono"
 
-#endif //_SIMT___DEBUG
+#endif //_SIMT_CHRONO
+
+

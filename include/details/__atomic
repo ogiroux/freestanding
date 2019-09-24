@@ -160,7 +160,7 @@ __host__ __device__ inline void __cxx_atomic_store(__cxx_atomic_base_impl_defaul
 #endif
 }
 template<class _Tp, int _Sco> 
-__host__ __device__ inline _Tp __cxx_atomic_load(__cxx_atomic_base_impl_default<_Tp, _Sco> volatile* __a, int __order) {
+__host__ __device__ inline _Tp __cxx_atomic_load(__cxx_atomic_base_impl_default<_Tp, _Sco> const volatile* __a, int __order) {
 #ifdef __CUDA_ARCH__
     return details::__atomic_load_n_simt(&__a->__a_value, __order, details::__scope_tag<_Sco>()); 
 #else
@@ -282,7 +282,7 @@ __host__ __device__ inline void __cxx_atomic_store(__cxx_atomic_base_impl_small<
     __cxx_atomic_store(&__a->__a_value, __cxx_small_to_32(__val), __order);
 }
 template<class _Tp, int _Sco> 
-__host__ __device__ inline _Tp __cxx_atomic_load(__cxx_atomic_base_impl_small<_Tp, _Sco> volatile* __a, int __order) {
+__host__ __device__ inline _Tp __cxx_atomic_load(__cxx_atomic_base_impl_small<_Tp, _Sco> const volatile* __a, int __order) {
     return __cxx_small_from_32<_Tp>(__cxx_atomic_load(&__a->__a_value, __order));
 }
 template<class _Tp, int _Sco> 
