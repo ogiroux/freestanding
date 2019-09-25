@@ -101,7 +101,7 @@ struct managed_allocator {
     return static_cast<T*>(out);
   }
   void deallocate(T* p, std::size_t) noexcept { 
-#ifdef __NVCC__ 
+#ifdef __NVCC__
 # ifdef __aarch64__
     check(cudaFreeHost(p));
 # else
@@ -115,8 +115,24 @@ struct managed_allocator {
 template<class T, class... Args>
 T* make_(Args &&... args) {
     managed_allocator<T> ma;
-    return new (ma.allocate(1)) T(std::forward<Args>(args)...);
+    auto n_ = new (ma.allocate(1)) T(std::forward<Args>(args)...);
+#if defined(__NVCC__) && !defined(__aarch64__)
+    check(cudaMemAdvise(n_, sizeof(T), cudaMemAdviseSetPreferredLocation, 0));
+    check(cudaMemPrefetchAsync(n_, sizeof(T), 0));
+#endif
+    return n_;
 }
+template<class T>
+void unmake_(T* ptr) {
+    managed_allocator<T> ma;
+    ptr->~T();
+    ma.deallocate(ptr, sizeof(T));
+}
+
+struct null_mutex {
+    _ABI void lock() noexcept { }
+    _ABI void unlock() noexcept { }
+};
 
 struct mutex {
 	_ABI void lock() noexcept {
@@ -132,7 +148,7 @@ struct mutex {
 		l.notify_one();
 #endif
 	}
-	simt::std::atomic<int> l = ATOMIC_VAR_INIT(0);
+	alignas(64) simt::atomic<int, simt::thread_scope_device> l = ATOMIC_VAR_INIT(0);
 };
 
 struct ticket_mutex {
@@ -153,8 +169,8 @@ struct ticket_mutex {
 		out.notify_all();
 #endif
 	}
-	alignas(64) simt::std::atomic<int> in = ATOMIC_VAR_INIT(0);
-    alignas(64) simt::std::atomic<int> out = ATOMIC_VAR_INIT(0);
+	alignas(64) simt::atomic<int, simt::thread_scope_device> in = ATOMIC_VAR_INIT(0);
+    alignas(64) simt::atomic<int, simt::thread_scope_device> out = ATOMIC_VAR_INIT(0);
 };
 
 /*
@@ -171,19 +187,22 @@ struct sem_mutex {
 
 static constexpr int sections = 1 << 20;
 
-using sum_mean_dev_t = std::tuple<int, double, double>;
+using sum_mean_dev_t = std::tuple<double, double, double>;
 
 template<class V>
 sum_mean_dev_t sum_mean_dev(V && v) {
     assert(!v.empty());
-    auto const sum = std::accumulate(v.begin(), v.end(), 0);
+    auto const sum = std::accumulate(v.begin(), v.end(), 0.0);
+    assert(sum >= 0.0);
     auto const mean = sum / v.size();
     auto const sq_diff_sum = std::accumulate(v.begin(), v.end(), 0.0, [=](double left, double right) -> double {
-        return left + (right - mean) * (right - mean);
+        auto const delta = right - mean;
+        return left + delta * delta;
     });
     auto const variance = sq_diff_sum / v.size();
+    assert(variance >= 0.0);
     auto const stddev = std::sqrt(variance);
-    return std::tie(sum, mean, stddev);
+    return sum_mean_dev_t(sum, mean, stddev);
 }
 
 #ifdef __NVCC__
@@ -193,15 +212,36 @@ __global__ void launcher(F f, int s_per_t, int* p) {
 }
 #endif
 
+int get_max_threads() {
+
+#ifndef __NVCC__
+    return std::thread::hardware_concurrency();
+#else
+    cudaDeviceProp deviceProp;
+    check(cudaGetDeviceProperties(&deviceProp, 0));
+    assert(deviceProp.major >= 7);
+    return deviceProp.multiProcessorCount * 
+           deviceProp.maxThreadsPerMultiProcessor;
+#endif    
+}
+
 template <class F>
 sum_mean_dev_t test_body(int threads, F f) {
 
     std::vector<int, managed_allocator<int>> progress(threads, 0);
 
 #ifdef __NVCC__
+    auto p_ = &progress[0];
+    check(cudaMemAdvise(p_, threads * sizeof(int), cudaMemAdviseSetPreferredLocation, 0));
+    check(cudaMemPrefetchAsync(p_, threads * sizeof(int), 0));
     auto f_ = make_<F>(f);
-    launcher<<<threads, 1>>>(f_, sections / threads, &progress[0]);
     cudaDeviceSynchronize();
+    int const max_blocks = get_max_threads() / 1024;
+    int const blocks = (std::min)(threads, max_blocks);
+    int const threads_per_block = (threads / blocks) + (threads % blocks ? 1 : 0);
+    launcher<<<blocks, threads_per_block>>>(f_, sections / threads, p_);
+    cudaDeviceSynchronize();
+    unmake_(f_);
 #else
 	std::vector<std::thread> ts(threads);
 	for (int i = 0; i < threads; ++i)
@@ -233,7 +273,7 @@ template <class F>
 void test(std::string const& name, int threads, F && f, simt::std::atomic<bool>& keep_going, bool use_omp = false) {
 
     std::thread test_helper([&]() {
-        std::this_thread::sleep_for(std::chrono::seconds(2));
+        std::this_thread::sleep_for(std::chrono::seconds(5));
         keep_going.store(false, simt::std::memory_order_relaxed);
     });
 
@@ -244,16 +284,16 @@ void test(std::string const& name, int threads, F && f, simt::std::atomic<bool>&
 
     test_helper.join();
 
-	double const d = double(std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count());
+	auto const r = std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count() / std::get<0>(smd);
     std::cout << std::setprecision(2) << std::fixed;
-	std::cout << name << " : " << d / std::get<0>(smd) << "ns per step, fairness metric = " 
+	std::cout << name << " : " << r << "ns per step, fairness metric = " 
                          << 100 * (1.0 - std::min(1.0, std::get<2>(smd) / std::get<1>(smd))) << "%." 
                          << std::endl;
 }
 
 template<class F>
 void test_loop(F && f) {
-    static int const max = std::thread::hardware_concurrency();
+    static int const max = get_max_threads();
     static std::vector<std::pair<int, std::string>> const counts = 
         { { 1, "single-threaded" }, 
           { max >> 5, "3% occupancy" },
@@ -290,6 +330,8 @@ void test_mutex(std::string const& name, bool use_omp = false) {
             return i;
         };
         test(name + ": " + c.second, c.first, f, *keep_going);
+        unmake_(m);
+        unmake_(keep_going);
     });
 };
 
@@ -305,16 +347,19 @@ void test_barrier(std::string const& name, bool use_omp = false) {
             return n;
         };
         test(name + ": " + c.second, c.first, f, keep_going, use_omp);
+        unmake_(b);
+        unmake_(keep_going);
     });
 };
 
 int main() {
 
-    int const max = std::thread::hardware_concurrency();
+    int const max = get_max_threads();
     std::cout << "System has " << max << " hardware threads." << std::endl;
 
 #ifndef __NO_MUTEX
 //    test_mutex<sem_mutex>("Semlock");
+    test_mutex<null_mutex>("Null");
     test_mutex<mutex>("Spinlock");
     test_mutex<ticket_mutex>("Ticket");
 #endif
