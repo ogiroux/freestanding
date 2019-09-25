@@ -53,6 +53,10 @@ THE SOFTWARE.
 
 #include <simt/atomic>
 
+//#define _LIBCPP_BARRIER_BUTTERFLY
+
+#include <simt/barrier>
+
 //#include <semaphore>
 //#include <latch>
 //#include <barrier>
@@ -274,7 +278,7 @@ sum_mean_dev_t test_omp_body(int threads, F && f) {
 }
 
 template <class F>
-void test(std::string const& name, int threads, F && f, simt::std::atomic<bool>& keep_going, bool use_omp = false) {
+void test(std::string const& name, int threads, F && f, simt::std::atomic<bool>& keep_going, bool use_omp, bool rate_per_thread) {
 
     std::cout << name << " : " << std::flush;
 
@@ -290,7 +294,9 @@ void test(std::string const& name, int threads, F && f, simt::std::atomic<bool>&
 
     test_helper.join();
 
-	auto const r = std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count() / std::get<0>(smd);
+	auto r = std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count() / std::get<0>(smd);
+    if(rate_per_thread)
+        r *= threads;
     std::cout << std::setprecision(2) << std::fixed;
 	std::cout << r << "ns per step, fairness metric = " 
               << 100 * (1.0 - std::min(1.0, std::get<2>(smd) / std::get<1>(smd))) << "%." 
@@ -337,7 +343,7 @@ void test_mutex_contended(std::string const& name, bool use_omp = false) {
             }
             return i;
         };
-        test(name + ", " + c.second, c.first, f, *keep_going, use_omp);
+        test(name + ", " + c.second, c.first, f, *keep_going, use_omp, false);
         unmake_(m);
         unmake_(keep_going);
     });
@@ -358,7 +364,7 @@ void test_mutex_uncontended(std::string const& name, bool use_omp = false) {
             }
             return i;
         };
-        test(name + ": " + c.second, c.first, f, *keep_going, use_omp);
+        test(name + ": " + c.second, c.first, f, *keep_going, use_omp, true);
         unmake_(keep_going);
     });
 };
@@ -380,7 +386,7 @@ void test_barrier(std::string const& name, bool use_omp = false) {
                 b->arrive_and_wait();
             return n;
         };
-        test(name + ": " + c.second, c.first, f, keep_going, use_omp);
+        test(name + ": " + c.second, c.first, f, *keep_going, use_omp, true);
         unmake_(b);
         unmake_(keep_going);
     });
@@ -391,15 +397,15 @@ int main() {
     int const max = get_max_threads();
     std::cout << "System has " << max << " hardware threads." << std::endl;
 
+#ifndef __NO_BARRIER
+    test_barrier<simt::barrier<simt::thread_scope_device>>("Barrier");
+#endif
+
 #ifndef __NO_MUTEX
 //    test_mutex<sem_mutex>("Semlock");
 //    test_mutex<null_mutex>("Null");
     test_mutex<mutex>("Spinlock");
     test_mutex<ticket_mutex>("Ticket");
-#endif
-
-#ifndef __NO_BARRIER
-//    test_barrier<barrier<>>("Barrier");
 #endif
 
 #ifdef _OPENMP
