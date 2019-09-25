@@ -178,7 +178,7 @@ sum_mean_dev_t sum_mean_dev(V && v) {
     assert(!v.empty());
     auto const sum = std::accumulate(v.begin(), v.end(), 0);
     auto const mean = sum / v.size();
-    auto const sq_diff_sum = std::accumulate(v.begin(), v.end(), 0.0, [=](auto left, auto right) -> auto {
+    auto const sq_diff_sum = std::accumulate(v.begin(), v.end(), 0.0, [=](double left, double right) -> double {
         return left + (right - mean) * (right - mean);
     });
     auto const variance = sq_diff_sum / v.size();
