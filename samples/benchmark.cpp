@@ -210,7 +210,7 @@ template<class F>
 __global__ void launcher(F f, int t, int s_per_t, int* p) {
     auto const tid = blockIdx.x * blockDim.x + threadIdx.x;
     if(tid < t)
-        p[tid] = (*f)(s_per_t);
+        p[tid] = (*f)(s_per_t, tid);
 }
 #endif
 
@@ -250,7 +250,7 @@ sum_mean_dev_t test_body(int threads, F f) {
 	std::vector<std::thread> ts(threads);
 	for (int i = 0; i < threads; ++i)
 		ts[i] = std::thread([&, i]() {
-            progress[i] = f(sections / threads);
+            progress[i] = f(sections / threads, i);
         });
 	for (auto& t : ts)
 		t.join();
@@ -265,7 +265,7 @@ sum_mean_dev_t test_omp_body(int threads, F && f) {
     std::vector<int> progress(threads, 0);
     #pragma omp parallel for num_threads(threads)
     for (int i = 0; i < threads; ++i)
-        progress[i] = f(sections / threads);
+        progress[i] = f(sections / threads, i);
     return sum_mean_dev(progress);
 #else
     assert(0); // build with -fopenmp
@@ -324,11 +324,11 @@ void test_loop(F && f) {
 }
 
 template<class M>
-void test_mutex(std::string const& name, bool use_omp = false) {
+void test_mutex_contended(std::string const& name, bool use_omp = false) {
     test_loop([&](std::pair<int, std::string> c) {
         M* m = make_<M>();
         simt::std::atomic<bool> *keep_going = make_<simt::std::atomic<bool>>(true);
-        auto f = [=] _ABI (int n) -> int {
+        auto f = [=] _ABI (int, int) -> int {
             int i = 0;
             while(keep_going->load(simt::std::memory_order_relaxed)) {
                 m->lock();
@@ -337,11 +337,37 @@ void test_mutex(std::string const& name, bool use_omp = false) {
             }
             return i;
         };
-        test(name + ": " + c.second, c.first, f, *keep_going);
+        test(name + ", " + c.second, c.first, f, *keep_going, use_omp);
         unmake_(m);
         unmake_(keep_going);
     });
 };
+
+template<class M>
+void test_mutex_uncontended(std::string const& name, bool use_omp = false) {
+    test_loop([&](std::pair<int, std::string> c) {
+        std::vector<M, managed_allocator<M>> ms(c.first);
+        M* ms_ = &ms[0];
+        simt::std::atomic<bool> *keep_going = make_<simt::std::atomic<bool>>(true);
+        auto f = [=] _ABI (int, int id) -> int {
+            int i = 0;
+            while(keep_going->load(simt::std::memory_order_relaxed)) {
+                ms_[id].lock();
+                ++i;
+                ms_[id].unlock();
+            }
+            return i;
+        };
+        test(name + ": " + c.second, c.first, f, *keep_going, use_omp);
+        unmake_(keep_going);
+    });
+};
+
+template<class M>
+void test_mutex(std::string const& name, bool use_omp = false) {
+    test_mutex_uncontended<M>(name + " uncontended", use_omp);
+    test_mutex_contended<M>(name + " contended", use_omp);
+}
 
 template<class B>
 void test_barrier(std::string const& name, bool use_omp = false) {
@@ -349,7 +375,7 @@ void test_barrier(std::string const& name, bool use_omp = false) {
     test_loop([&](std::pair<int, std::string> c) {
         B* b = make_<B>(c.first);
         simt::std::atomic<bool> *keep_going = make_<simt::std::atomic<bool>>(true);
-        auto f = [=] _ABI (int n)  -> int {
+        auto f = [=] _ABI (int n, int)  -> int {
             for (int i = 0; i < n; ++i)
                 b->arrive_and_wait();
             return n;
