@@ -207,8 +207,10 @@ sum_mean_dev_t sum_mean_dev(V && v) {
 
 #ifdef __NVCC__
 template<class F>
-__global__ void launcher(F f, int s_per_t, int* p) {
-    p[blockIdx.x * blockDim.x + threadIdx.x] = (*f)(s_per_t);
+__global__ void launcher(F f, int t, int s_per_t, int* p) {
+    auto const tid = blockIdx.x * blockDim.x + threadIdx.x;
+    if(tid < t)
+        p[tid] = (*f)(s_per_t);
 }
 #endif
 
@@ -232,14 +234,16 @@ sum_mean_dev_t test_body(int threads, F f) {
 
 #ifdef __NVCC__
     auto p_ = &progress[0];
+# ifndef __aarch64__
     check(cudaMemAdvise(p_, threads * sizeof(int), cudaMemAdviseSetPreferredLocation, 0));
     check(cudaMemPrefetchAsync(p_, threads * sizeof(int), 0));
+# endif
     auto f_ = make_<F>(f);
     cudaDeviceSynchronize();
     int const max_blocks = get_max_threads() / 1024;
     int const blocks = (std::min)(threads, max_blocks);
     int const threads_per_block = (threads / blocks) + (threads % blocks ? 1 : 0);
-    launcher<<<blocks, threads_per_block>>>(f_, sections / threads, p_);
+    launcher<<<blocks, threads_per_block>>>(f_, threads, sections / threads, p_);
     cudaDeviceSynchronize();
     unmake_(f_);
 #else
@@ -272,6 +276,8 @@ sum_mean_dev_t test_omp_body(int threads, F && f) {
 template <class F>
 void test(std::string const& name, int threads, F && f, simt::std::atomic<bool>& keep_going, bool use_omp = false) {
 
+    std::cout << name << " : " << std::flush;
+
     std::thread test_helper([&]() {
         std::this_thread::sleep_for(std::chrono::seconds(5));
         keep_going.store(false, simt::std::memory_order_relaxed);
@@ -286,9 +292,9 @@ void test(std::string const& name, int threads, F && f, simt::std::atomic<bool>&
 
 	auto const r = std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count() / std::get<0>(smd);
     std::cout << std::setprecision(2) << std::fixed;
-	std::cout << name << " : " << r << "ns per step, fairness metric = " 
-                         << 100 * (1.0 - std::min(1.0, std::get<2>(smd) / std::get<1>(smd))) << "%." 
-                         << std::endl;
+	std::cout << r << "ns per step, fairness metric = " 
+              << 100 * (1.0 - std::min(1.0, std::get<2>(smd) / std::get<1>(smd))) << "%." 
+              << std::endl << std::flush;
 }
 
 template<class F>
@@ -296,12 +302,13 @@ void test_loop(F && f) {
     static int const max = get_max_threads();
     static std::vector<std::pair<int, std::string>> const counts = 
         { { 1, "single-threaded" }, 
-          { max >> 5, "3% occupancy" },
-          { max >> 4, "6% occupancy" },
-          { max >> 3, "12% occupancy" },
-          { max >> 2, "25% occupancy" },
-          { max >> 1, "50% occupancy" },
-          { max, "100% occupancy" },
+          { 2, "2 threads" },
+          { 4, "4 threads" },
+          { 16, "16 threads" },
+          { 64, "64 threads" },
+          { 512, "512 threads" },
+          { 4096, "4096 threads" },
+          { max, "maximum occupancy" },
 //#if !defined(__NO_SPIN) || !defined(__NO_WAIT)
 //          { max * 2, "200% occupancy" } 
 //#endif
@@ -310,7 +317,8 @@ void test_loop(F && f) {
     for(auto const& c : counts) {
         if(done.find(c.first) != done.end())
             continue;
-        f(c);
+        if(c.first <= max)
+            f(c);
         done.insert(c.first);
     }
 }
@@ -359,7 +367,7 @@ int main() {
 
 #ifndef __NO_MUTEX
 //    test_mutex<sem_mutex>("Semlock");
-    test_mutex<null_mutex>("Null");
+//    test_mutex<null_mutex>("Null");
     test_mutex<mutex>("Spinlock");
     test_mutex<ticket_mutex>("Ticket");
 #endif
