@@ -35,8 +35,7 @@ THE SOFTWARE.
         #define _Float16 __half
     #endif
 #else
-    #define __host__
-    #define __device__
+    #include <cuda_runtime_api.h>
 #endif
 
 #ifdef _MSC_VER
