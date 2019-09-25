@@ -61,9 +61,10 @@ THE SOFTWARE.
 # define _ABI __host__ __device__
 # define check(ans) { assert_((ans), __FILE__, __LINE__); }
 inline void assert_(cudaError_t code, const char *file, int line) {
-   if (code == cudaSuccess) return;
-    std::cerr << "check failed: " << cudaGetErrorString(code) << " : " << file << '@' << line << std::endl;
-    abort();
+  if (code == cudaSuccess)
+    return;
+  std::cerr << "check failed: " << cudaGetErrorString(code) << " : " << file << '@' << line << std::endl;
+  abort();
 }
 #else
 # define _ABI
@@ -86,15 +87,26 @@ struct managed_allocator {
   T* allocate(std::size_t n) {
     void* out = nullptr;
 #ifdef __NVCC__
+# ifdef __aarch64__
+    check(cudaMallocHost(&out, n*sizeof(T), cudaHostAllocMapped));
+    void* out2;
+    check(cudaHostGetDevicePointer(&out2, out, 0));
+    assert(out2==out); //< we can't handle non-uniform addressing
+# else
     check(cudaMallocManaged(&out, n*sizeof(T)));
+# endif
 #else
     out = malloc(n*sizeof(T));
 #endif
     return static_cast<T*>(out);
   }
   void deallocate(T* p, std::size_t) noexcept { 
-#ifdef __NVCC__
-    check(cudaFree(p)); 
+#ifdef __NVCC__ 
+# ifdef __aarch64__
+    check(cudaFreeHost(p));
+# else
+    check(cudaFree(p));
+# endif
 #else
     free(p);
 #endif
