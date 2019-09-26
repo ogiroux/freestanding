@@ -22,22 +22,6 @@ THE SOFTWARE.
 
 */
 
-// WAIT / NOTIFY
-    //#define __NO_TABLE
-    //#define __NO_FUTEX
-    //#define __NO_CONDVAR
-    //#define __NO_SLEEP
-    //#define __NO_IDENT
-    // To benchmark against spinning
-    //#define __NO_SPIN
-    //#define __NO_WAIT
-
-// SEMAPHORE
-    //#define __NO_SEM
-    //#define __NO_SEM_BACK
-    //#define __NO_SEM_FRONT
-    //#define __NO_SEM_POLL
-
 #include <cmath>
 #include <mutex>
 #include <thread>
@@ -48,16 +32,19 @@ THE SOFTWARE.
 #include <numeric>
 #include <tuple>
 #include <set>
-
 #include <chrono>
 
+#include <simt/cstdint>
+#include <simt/cstddef>
+#include <simt/climits>
+#include <simt/ratio>
+#include <simt/chrono>
+#include <simt/limits>
+#include <simt/type_traits>
 #include <simt/atomic>
 #include <simt/barrier>
 #include <simt/latch>
 #include <simt/semaphore>
-//#include <semaphore>
-//#include <latch>
-//#include <barrier>
 
 #ifdef __CUDACC__
 # define _ABI __host__ __device__
