@@ -54,6 +54,7 @@ THE SOFTWARE.
 #include <simt/atomic>
 #include <simt/barrier>
 #include <simt/latch>
+#include <simt/semaphore>
 //#include <semaphore>
 //#include <latch>
 //#include <barrier>
@@ -174,7 +175,6 @@ struct ticket_mutex {
     alignas(64) simt::atomic<int, simt::thread_scope_device> out = ATOMIC_VAR_INIT(0);
 };
 
-/*
 struct sem_mutex {
 	void lock() noexcept {
         c.acquire();
@@ -182,9 +182,9 @@ struct sem_mutex {
 	void unlock() noexcept {
         c.release();
 	}
-	std::binary_semaphore c = 1;
+    sem_mutex() : c(1) { }
+	simt::binary_semaphore<simt::thread_scope_device> c;
 };
-*/
 
 static constexpr int sections = 1 << 18;
 
@@ -420,7 +420,7 @@ int main() {
     std::cout << "System has " << max << " hardware threads." << std::endl;
 
 #ifndef __NO_MUTEX
-//  test_mutex<sem_mutex>("Semlock");
+    test_mutex<sem_mutex>("Semlock");
 //  test_mutex<null_mutex>("Null");
     test_mutex<mutex>("Spinlock");
     test_mutex<ticket_mutex>("Ticket");
