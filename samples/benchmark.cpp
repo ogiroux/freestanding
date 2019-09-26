@@ -58,7 +58,7 @@ THE SOFTWARE.
 //#include <latch>
 //#include <barrier>
 
-#ifdef __NVCC__
+#ifdef __CUDACC__
 # define _ABI __host__ __device__
 # define check(ans) { assert_((ans), __FILE__, __LINE__); }
 inline void assert_(cudaError_t code, const char *file, int line) {
@@ -87,7 +87,7 @@ struct managed_allocator {
   template <class U> constexpr managed_allocator(const managed_allocator<U>&) noexcept {}
   T* allocate(std::size_t n) {
     void* out = nullptr;
-#ifdef __NVCC__
+#ifdef __CUDACC__
 # ifdef __aarch64__
     check(cudaMallocHost(&out, n*sizeof(T), cudaHostAllocMapped));
     void* out2;
@@ -102,7 +102,7 @@ struct managed_allocator {
     return static_cast<T*>(out);
   }
   void deallocate(T* p, std::size_t) noexcept { 
-#ifdef __NVCC__
+#ifdef __CUDACC__
 # ifdef __aarch64__
     check(cudaFreeHost(p));
 # else
@@ -117,7 +117,7 @@ template<class T, class... Args>
 T* make_(Args &&... args) {
     managed_allocator<T> ma;
     auto n_ = new (ma.allocate(1)) T(std::forward<Args>(args)...);
-#if defined(__NVCC__) && !defined(__aarch64__)
+#if defined(__CUDACC__) && !defined(__aarch64__)
     check(cudaMemAdvise(n_, sizeof(T), cudaMemAdviseSetPreferredLocation, 0));
     check(cudaMemPrefetchAsync(n_, sizeof(T), 0));
 #endif
@@ -206,7 +206,7 @@ sum_mean_dev_t sum_mean_dev(V && v) {
     return sum_mean_dev_t(sum, mean, stddev);
 }
 
-#ifdef __NVCC__
+#ifdef __CUDACC__
 template<class F>
 __global__ void launcher(F f, int t, int s_per_t, int* p) {
     auto const tid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -217,7 +217,7 @@ __global__ void launcher(F f, int t, int s_per_t, int* p) {
 
 int get_max_threads() {
 
-#ifndef __NVCC__
+#ifndef __CUDACC__
     return std::thread::hardware_concurrency();
 #else
     cudaDeviceProp deviceProp;
@@ -233,7 +233,7 @@ sum_mean_dev_t test_body(int threads, F f) {
 
     std::vector<int, managed_allocator<int>> progress(threads, 0);
 
-#ifdef __NVCC__
+#ifdef __CUDACC__
     auto p_ = &progress[0];
 # ifndef __aarch64__
     check(cudaMemAdvise(p_, threads * sizeof(int), cudaMemAdviseSetPreferredLocation, 0));
@@ -280,7 +280,7 @@ void test(std::string const& name, int threads, F && f, simt::std::atomic<bool>&
     std::cout << name << " : " << std::flush;
 
     std::thread test_helper([&]() {
-        std::this_thread::sleep_for(std::chrono::seconds(5));
+        std::this_thread::sleep_for(std::chrono::seconds(1));
         keep_going.store(false, simt::std::memory_order_relaxed);
     });
 
@@ -368,7 +368,7 @@ void test_mutex_uncontended(std::string const& name, bool use_omp = false) {
 
 template<class M>
 void test_mutex(std::string const& name, bool use_omp = false) {
-    test_mutex_uncontended<M>(name + " uncontended", use_omp);
+//  test_mutex_uncontended<M>(name + " uncontended", use_omp);
     test_mutex_contended<M>(name + " contended", use_omp);
 }
 
@@ -419,16 +419,19 @@ int main() {
     int const max = get_max_threads();
     std::cout << "System has " << max << " hardware threads." << std::endl;
 
+#ifndef __NO_MUTEX
+//  test_mutex<sem_mutex>("Semlock");
+//  test_mutex<null_mutex>("Null");
+    test_mutex<mutex>("Spinlock");
+    test_mutex<ticket_mutex>("Ticket");
+#ifndef __CUDACC__
+    test_mutex<std::mutex>("Ticket");
+#endif
+#endif
+
 #ifndef __NO_BARRIER
     test_latch<simt::latch<simt::thread_scope_device>>("Latch");
     test_barrier<simt::barrier<simt::thread_scope_device>>("Barrier");
-#endif
-
-#ifndef __NO_MUTEX
-//    test_mutex<sem_mutex>("Semlock");
-//    test_mutex<null_mutex>("Null");
-    test_mutex<mutex>("Spinlock");
-    test_mutex<ticket_mutex>("Ticket");
 #endif
 
 #ifdef _OPENMP
@@ -440,7 +443,7 @@ int main() {
     };
     test_barrier<omp_barrier>("OMP", true);
 #endif
-/*
+
 #if defined(_POSIX_THREADS) && !defined(__APPLE__)
     struct posix_barrier {
         posix_barrier(ptrdiff_t count) {
@@ -456,6 +459,6 @@ int main() {
     };
     test_barrier<posix_barrier>("Pthread");
 #endif
-*/
+
 	return 0;
 }
