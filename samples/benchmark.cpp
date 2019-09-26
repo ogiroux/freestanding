@@ -186,7 +186,7 @@ struct sem_mutex {
 };
 */
 
-static constexpr int sections = 1 << 20;
+static constexpr int sections = 1 << 18;
 
 using sum_mean_dev_t = std::tuple<double, double, double>;
 
