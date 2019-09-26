@@ -52,11 +52,8 @@ THE SOFTWARE.
 #include <chrono>
 
 #include <simt/atomic>
-
-//#define _LIBCPP_BARRIER_BUTTERFLY
-
 #include <simt/barrier>
-
+#include <simt/latch>
 //#include <semaphore>
 //#include <latch>
 //#include <barrier>
@@ -392,12 +389,38 @@ void test_barrier(std::string const& name, bool use_omp = false) {
     });
 };
 
+template<class L>
+void test_latch(std::string const& name, bool use_omp = false) {
+
+    test_loop([&](std::pair<int, std::string> c) {
+
+        managed_allocator<L> ma;
+
+        size_t const n = sections / c.first;
+        auto* ls = ma.allocate(n);
+        for(size_t i = 0; i < n; ++i)
+            new (ls + i) L(c.first);
+
+        simt::std::atomic<bool> *keep_going = make_<simt::std::atomic<bool>>(true);
+        auto f = [=] _ABI (int, int)  -> int {
+            for (int i = 0; i < n; ++i)
+                ls[i].arrive_and_wait();
+            return n;
+        };
+        test(name + ": " + c.second, c.first, f, *keep_going, use_omp, true);
+
+        ma.deallocate(ls, n);
+        unmake_(keep_going);
+    });
+};
+
 int main() {
 
     int const max = get_max_threads();
     std::cout << "System has " << max << " hardware threads." << std::endl;
 
 #ifndef __NO_BARRIER
+    test_latch<simt::latch<simt::thread_scope_device>>("Latch");
     test_barrier<simt::barrier<simt::thread_scope_device>>("Barrier");
 #endif
 

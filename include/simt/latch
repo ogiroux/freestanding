@@ -22,26 +22,26 @@ THE SOFTWARE.
 
 */
 
-#ifndef _SIMT_BARRIER
-#define _SIMT_BARRIER
+#ifndef _SIMT_LATCH
+#define _SIMT_LATCH
 
 #include "atomic"
 
 #include "../details/__config"
 
-#include "../../libcxx/include/barrier"
+#include "../../libcxx/include/latch"
 
 namespace simt {
 
-template<thread_scope _Sco, class CompletionF = std::EmptyCompletionF>
-class barrier : public std::__barrier_base<CompletionF, _Sco> {
+template<thread_scope _Sco>
+class latch : public std::__latch_base<_Sco> {
 public:
     _LIBCPP_INLINE_VISIBILITY
-    barrier(std::ptrdiff_t count, CompletionF completion = CompletionF()) 
-        : std::__barrier_base<CompletionF, _Sco>(count, completion) { 
+    latch(std::ptrdiff_t count) 
+        : std::__latch_base<_Sco>(count) { 
     }
 };
 
 }
 
-#endif //_SIMT_BARRIER
+#endif //_SIMT_LATCH
