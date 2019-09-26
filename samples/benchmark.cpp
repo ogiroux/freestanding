@@ -425,7 +425,7 @@ int main() {
     test_mutex<mutex>("Spinlock");
     test_mutex<ticket_mutex>("Ticket");
 #ifndef __CUDACC__
-    test_mutex<std::mutex>("Ticket");
+    test_mutex<std::mutex>("std::mutex");
 #endif
 #endif
 
