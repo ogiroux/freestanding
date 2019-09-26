@@ -444,7 +444,7 @@ int main() {
     test_barrier<omp_barrier>("OMP", true);
 #endif
 
-#if defined(_POSIX_THREADS) && !defined(__APPLE__)
+#if !defined(__CUDACC__) && defined(_POSIX_THREADS) && !defined(__APPLE__)
     struct posix_barrier {
         posix_barrier(ptrdiff_t count) {
             pthread_barrier_init(&pb, nullptr, count);
