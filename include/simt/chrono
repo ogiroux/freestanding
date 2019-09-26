@@ -47,21 +47,22 @@ namespace chrono {
 class _LIBCPP_TYPE_VIS system_clock
 {
 public:
-    typedef nanoseconds                      duration;
+    typedef microseconds                     duration;
     typedef duration::rep                    rep;
     typedef duration::period                 period;
     typedef chrono::time_point<system_clock> time_point;
     static _LIBCPP_CONSTEXPR_AFTER_CXX11 const bool is_steady = true;
 
     inline _LIBCPP_INLINE_VISIBILITY
-    static time_point now() _NOEXCEPT {
+    static time_point now() _NOEXCEPT 
+    {
 #ifdef __CUDA_ARCH__
         uint64_t time;
         asm("mov.u64  %0, %globaltimer;":"=l"(time)::);
-        return time_point(duration(time)); // we'll just pretend the clock is 1Ghz
+        return time_point(duration_cast<microseconds>(nanoseconds(time)));
 #else
-        return time_point(duration(
-                ::std::chrono::duration_cast<::std::chrono::nanoseconds>(
+        return time_point(microseconds(
+                ::std::chrono::duration_cast<::std::chrono::microseconds>(
                     ::std::chrono::system_clock::now().time_since_epoch()
                 ).count()
                ));
@@ -79,9 +80,32 @@ public:
     }
 };
 
-using steady_clock = system_clock;
+class _LIBCPP_TYPE_VIS steady_clock
+{
+public:
+    typedef nanoseconds                                   duration;
+    typedef duration::rep                                 rep;
+    typedef duration::period                              period;
+    typedef chrono::time_point<steady_clock, duration>    time_point;
+    static _LIBCPP_CONSTEXPR_AFTER_CXX11 const bool is_steady = true;
 
-using high_resolution_clock = system_clock;
+    static time_point now() _NOEXCEPT 
+    {
+#ifdef __CUDA_ARCH__
+        uint64_t time;
+        asm("mov.u64  %0, %globaltimer;":"=l"(time)::);
+        return time_point(nanoseconds(time));
+#else
+        return time_point(nanoseconds(
+                ::std::chrono::duration_cast<::std::chrono::nanoseconds>(
+                    ::std::chrono::system_clock::now().time_since_epoch()
+                ).count()
+               ));
+#endif
+    }
+};
+
+using high_resolution_clock = steady_clock;
 
 #if _LIBCPP_STD_VER > 17
 
