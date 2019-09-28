@@ -451,3 +451,12 @@ int main() {
 
 	return 0;
 }
+
+
+#if !defined(_LIBCPP_HAS_NO_TREE_BARRIER) && !defined(_LIBCPP_HAS_NO_THREAD_FAVORITE_HASH)
+_LIBCPP_BEGIN_NAMESPACE_STD
+thread_local ptrdiff_t __libcpp_thread_favorite_hash = 0;
+//    hash<__thread_id>()(this_thread::get_id());
+_LIBCPP_END_NAMESPACE_STD
+#endif
+
