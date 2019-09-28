@@ -293,7 +293,9 @@ void test_loop(F && f) {
     static std::vector<std::pair<int, std::string>> const counts = 
         { { 1, "single-threaded" }, 
           { 2, "2 threads" },
+          { 3, "3 threads" },
           { 4, "4 threads" },
+          { 5, "5 threads" },
           { 16, "16 threads" },
           { 64, "64 threads" },
           { 512, "512 threads" },
@@ -405,7 +407,7 @@ int main() {
 
     int const max = get_max_threads();
     std::cout << "System has " << max << " hardware threads." << std::endl;
-
+/*
 #ifndef __NO_MUTEX
     test_mutex<sem_mutex>("Semlock");
 //  test_mutex<null_mutex>("Null");
@@ -415,9 +417,9 @@ int main() {
     test_mutex<std::mutex>("std::mutex");
 #endif
 #endif
-
+*/
 #ifndef __NO_BARRIER
-    test_latch<simt::latch<simt::thread_scope_device>>("Latch");
+//    test_latch<simt::latch<simt::thread_scope_device>>("Latch");
     test_barrier<simt::barrier<simt::thread_scope_device>>("Barrier");
 #endif
 
