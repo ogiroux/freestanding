@@ -33,7 +33,7 @@ THE SOFTWARE.
 
 namespace simt {
 
-template<thread_scope _Sco, class CompletionF = std::EmptyCompletionF>
+template<thread_scope _Sco, class CompletionF = std::__empty_completion>
 class barrier : public std::__barrier_base<CompletionF, _Sco> {
 public:
     _LIBCPP_INLINE_VISIBILITY
