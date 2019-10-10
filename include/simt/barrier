@@ -29,6 +29,10 @@ THE SOFTWARE.
 
 #include "../details/__config"
 
+#ifdef _LIBCUPP_HAS_TREE_BARRIER
+# include <vector>
+#endif
+
 #include "../../libcxx/include/barrier"
 
 namespace simt {
