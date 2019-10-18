@@ -163,13 +163,13 @@ struct ticket_mutex {
 };
 
 struct sem_mutex {
-	void lock() noexcept {
+	_ABI void lock() noexcept {
         c.acquire();
 	}
-	void unlock() noexcept {
+	_ABI void unlock() noexcept {
         c.release();
 	}
-    sem_mutex() : c(1) { }
+    _ABI sem_mutex() : c(1) { }
 	simt::binary_semaphore<simt::thread_scope_device> c;
 };
 
@@ -181,14 +181,14 @@ template<class V>
 sum_mean_dev_t sum_mean_dev(V && v) {
     assert(!v.empty());
     auto const sum = std::accumulate(v.begin(), v.end(), 0.0);
-    assert(sum >= 0.0);
+//    assert(sum >= 0.0);
     auto const mean = sum / v.size();
     auto const sq_diff_sum = std::accumulate(v.begin(), v.end(), 0.0, [=](double left, double right) -> double {
         auto const delta = right - mean;
         return left + delta * delta;
     });
     auto const variance = sq_diff_sum / v.size();
-    assert(variance >= 0.0);
+//    assert(variance >= 0.0);
     auto const stddev = std::sqrt(variance);
     return sum_mean_dev_t(sum, mean, stddev);
 }
@@ -410,7 +410,7 @@ int main() {
 
 #ifndef __NO_MUTEX
     test_mutex<sem_mutex>("Semlock");
-//  test_mutex<null_mutex>("Null");
+    test_mutex<null_mutex>("Null");
     test_mutex<mutex>("Spinlock");
     test_mutex<ticket_mutex>("Ticket");
 #ifndef __CUDACC__
@@ -419,7 +419,7 @@ int main() {
 #endif
 
 #ifndef __NO_BARRIER
-//    test_latch<simt::latch<simt::thread_scope_device>>("Latch");
+    test_latch<simt::latch<simt::thread_scope_device>>("Latch");
     test_barrier<simt::barrier<simt::thread_scope_device>>("Barrier");
 #endif
 
