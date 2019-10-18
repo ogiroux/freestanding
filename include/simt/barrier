@@ -30,19 +30,47 @@ THE SOFTWARE.
 #include "../details/__config"
 
 #ifdef _LIBCUPP_HAS_TREE_BARRIER
-# include <vector>
+#  include <memory>
 #endif
 
 #include "../../libcxx/include/barrier"
 
 namespace simt {
 
-template<thread_scope _Sco, class CompletionF = std::__empty_completion>
-class barrier : public std::__barrier_base<CompletionF, _Sco> {
+template<thread_scope _Sco, class _CompletionF = std::__empty_completion>
+class barrier {
+
+    std::__barrier_base<_CompletionF, _Sco> __b;
 public:
+    using arrival_token = typename std::__barrier_base<_CompletionF>::arrival_token;
+
     _LIBCPP_INLINE_VISIBILITY
-    barrier(std::ptrdiff_t count, CompletionF completion = CompletionF()) 
-        : std::__barrier_base<CompletionF, _Sco>(count, completion) { 
+    barrier(ptrdiff_t __count, _CompletionF __completion = _CompletionF()) 
+        : __b(__count, std::move(__completion)) { 
+    }
+
+    barrier(barrier const&) = delete;
+    barrier& operator=(barrier const&) = delete;
+
+    [[nodiscard]] _LIBCPP_INLINE_VISIBILITY
+    arrival_token arrive(ptrdiff_t update = 1) 
+    {
+        return __b.arrive(update);
+    }
+    _LIBCPP_INLINE_VISIBILITY 
+    void wait(arrival_token&& __phase) const
+    {
+        __b.wait(std::move(__phase));
+    }
+	_LIBCPP_INLINE_VISIBILITY
+    void arrive_and_wait() 
+    {
+        wait(arrive());
+	}
+    _LIBCPP_INLINE_VISIBILITY
+    void arrive_and_drop()
+    {
+        __b.arrive_and_drop();
     }
 };
 

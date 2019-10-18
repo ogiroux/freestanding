@@ -33,17 +33,53 @@ THE SOFTWARE.
 
 namespace simt {
 
-template<thread_scope _Sco, ptrdiff_t least_max_value = INT_MAX>
-class counting_semaphore : public std::__semaphore_base<least_max_value, _Sco> 
+template<thread_scope _Sco, ptrdiff_t __least_max_value = INT_MAX>
+class counting_semaphore
 {
-    static_assert(least_max_value <= std::__semaphore_base<least_max_value, _Sco>::max(), "");
+    std::__semaphore_base<_Sco, __least_max_value> __semaphore;
 public:
+    static constexpr ptrdiff_t max() noexcept {
+        return __least_max_value;
+    }
+
     _LIBCPP_INLINE_VISIBILITY
-    counting_semaphore(ptrdiff_t count = 0) : std::__semaphore_base<least_max_value, _Sco>(count) { }
+    counting_semaphore(ptrdiff_t __count = 0) : __semaphore(__count) { }
     ~counting_semaphore() = default;
 
     counting_semaphore(const counting_semaphore&) = delete;
     counting_semaphore& operator=(const counting_semaphore&) = delete;
+
+    _LIBCPP_INLINE_VISIBILITY
+    void release(ptrdiff_t __update = 1)
+    {
+        __semaphore.release(__update);
+    }
+    _LIBCPP_INLINE_VISIBILITY
+    void acquire() 
+    {
+        __semaphore.acquire();
+    }
+    template<class Rep, class Period>
+    _LIBCPP_INLINE_VISIBILITY
+    bool try_acquire_for(std::chrono::duration<Rep, Period> const& __rel_time)
+    {
+        return __semaphore.try_acquire_for(std::chrono::duration_cast<std::chrono::nanoseconds>(__rel_time));
+    }
+    _LIBCPP_INLINE_VISIBILITY
+    bool try_acquire()
+    {
+        return try_acquire_for(std::chrono::nanoseconds::zero());
+    }
+    template <class Clock, class Duration>
+    _LIBCPP_INLINE_VISIBILITY
+    bool try_acquire_until(std::chrono::time_point<Clock, Duration> const& __abs_time) 
+    {
+        auto const current = Clock::now();
+        if(current >= __abs_time)
+            return try_acquire();
+        else
+            return try_acquire_for(__abs_time - current);
+    }
 };
 
 template<thread_scope _Sco>

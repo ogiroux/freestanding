@@ -407,7 +407,7 @@ int main() {
 
     int const max = get_max_threads();
     std::cout << "System has " << max << " hardware threads." << std::endl;
-/*
+
 #ifndef __NO_MUTEX
     test_mutex<sem_mutex>("Semlock");
 //  test_mutex<null_mutex>("Null");
@@ -417,7 +417,7 @@ int main() {
     test_mutex<std::mutex>("std::mutex");
 #endif
 #endif
-*/
+
 #ifndef __NO_BARRIER
 //    test_latch<simt::latch<simt::thread_scope_device>>("Latch");
     test_barrier<simt::barrier<simt::thread_scope_device>>("Barrier");
