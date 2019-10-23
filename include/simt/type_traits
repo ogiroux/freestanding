@@ -25,6 +25,10 @@ THE SOFTWARE.
 #ifndef _SIMT_TYPE_TRAITS
 #define _SIMT_TYPE_TRAITS
 
+#define _LIBCPP_STD_VER_PREV _LIBCPP_STD_VER
+#undef _LIBCPP_STD_VER
+#define _LIBCPP_STD_VER 17
+
 #ifndef __CUDACC_RTC__
     #include <type_traits>
 #endif //__CUDACC_RTC__
@@ -34,5 +38,9 @@ THE SOFTWARE.
 #include "../details/__config"
 
 #include "../../libcxx/include/type_traits"
+
+#undef _LIBCPP_STD_VER
+#define _LIBCPP_STD_VER _LIBCPP_STD_VER_PREV
+#undef _LIBCPP_STD_VER_PREV
 
 #endif //_SIMT_TYPE_TRAITS
