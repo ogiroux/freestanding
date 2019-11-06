@@ -34,19 +34,27 @@ THE SOFTWARE.
 
 #include "../details/__config"
 
-#define _LIBCPP_STD_VER_PREV _LIBCPP_STD_VER
-#undef _LIBCPP_STD_VER
-#define _LIBCPP_STD_VER 20
+#ifdef _LIBCUDACXX_USE_CXX20_CHRONO
+#  define _LIBCPP_STD_VER_PREV _LIBCPP_STD_VER
+#  undef _LIBCPP_STD_VER
+#  define _LIBCPP_STD_VER 20
+#endif //_LIBCUDACXX_USE_CXX20_CHRONO
 
 #ifndef __CUDACC_RTC__
     #include <chrono>
 #endif //__CUDACC_RTC__
 
+#define _LIBCUDACXX_USE_CUDA_CLOCK
+
 #include "../../libcxx/include/chrono"
 
-#undef _LIBCPP_STD_VER
-#define _LIBCPP_STD_VER _LIBCPP_STD_VER_PREV
-#undef _LIBCPP_STD_VER_PREV
+#undef _LIBCUDACXX_USE_CUDA_CLOCK
+
+#ifdef _LIBCUDACXX_USE_CXX20_CHRONO
+#  undef _LIBCPP_STD_VER
+#  define _LIBCPP_STD_VER _LIBCPP_STD_VER_PREV
+#  undef _LIBCPP_STD_VER_PREV
+#endif //_LIBCUDACXX_USE_CXX20_CHRONO
 
 #endif //_SIMT_CHRONO
 
