@@ -132,14 +132,14 @@ struct atomic
     __host__ __device__
     _Tp fetch_or(const _Tp & __op, memory_order __m = memory_order_seq_cst) volatile noexcept
     {
-        return details::__atomic_fetch_or_simt(&this->__a.__a_value, __op,
+        return details::__atomic_fetch_or_simt(&this->__a_.__a_value, __op,
                                                __m, details::__scope_tag<_Sco>());
     }
 
     __host__ __device__
     _Tp fetch_and(const _Tp & __op, memory_order __m = memory_order_seq_cst) volatile noexcept
     {
-        return details::__atomic_fetch_and_simt(&this->__a.__a_value, __op,
+        return details::__atomic_fetch_and_simt(&this->__a_.__a_value, __op,
                                                __m, details::__scope_tag<_Sco>());
     }
 
